@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Timetracker</title>
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #f7f7f8;
+  color: #333;
+  display: flex;
+  justify-content: center;
+  padding: 30px;
+}
+
+#container {
+  background: #fff;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  border-radius: 8px;
+  padding: 20px;
+  max-width: 500px;
+  width: 100%;
+}
+
+label {
+  display: block;
+  margin-top: 10px;
+}
+
+input {
+  width: 100%;
+  padding: 5px;
+  box-sizing: border-box;
+}
+
+button {
+  margin-top: 15px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+#startBtn { background: #4caf50; color: #fff; }
+#stopBtn { background: #d9534f; color: #fff; margin-left: 5px; }
+
+#barContainer {
+  width: 100%;
+  background: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 20px;
+  height: 25px;
+}
+
+#bar {
+  background: linear-gradient(90deg, #4caf50, #8bc34a);
+  height: 100%;
+  width: 0%;
+  transition: width 0.5s ease;
+}
+
+#info {
+  margin-top: 15px;
+}
+</style>
+</head>
+<body>
+<div id="container">
+<h1>Timetracker</h1>
+<label for="startTime">Startzeit:</label>
+<input type="datetime-local" id="startTime">
+<label for="expectedEndTime">Voraussichtliche Endzeit:</label>
+<input type="datetime-local" id="expectedEndTime">
+<label for="hourlyRate">Stundenlohn (&euro;):</label>
+<input type="number" id="hourlyRate" value="0" step="0.01">
+<button id="startBtn">Start</button>
+<button id="stopBtn" disabled>Stop</button>
+
+<div id="barContainer"><div id="bar"></div></div>
+<div id="info">
+<p>Verstrichene Zeit: <span id="elapsed">0:00:00</span></p>
+<p>Verbleibende Zeit: <span id="remaining">0:00:00</span></p>
+<p>Fortschritt: <span id="progress">0%</span></p>
+<p>Verdienst: &euro;<span id="earnings">0.00</span></p>
+</div>
+</div>
+
+<script>
+let animFrame = null;
+let startTime = null;
+let expectedEnd = null;
+let rate = 0;
+
+function formatTime(seconds) {
+  const hrs = Math.floor(seconds / 3600);
+  const mins = Math.floor((seconds % 3600) / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${hrs}:${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+}
+
+function update() {
+  const now = new Date();
+  const elapsedSec = (now - startTime) / 1000;
+  const totalSec = (expectedEnd - startTime) / 1000;
+  const progress = Math.min(elapsedSec / totalSec, 1);
+  const remainingSec = Math.max(totalSec - elapsedSec, 0);
+
+  document.getElementById('elapsed').textContent = formatTime(elapsedSec);
+  document.getElementById('remaining').textContent = formatTime(remainingSec);
+  document.getElementById('progress').textContent = Math.round(progress * 100) + '%';
+  document.getElementById('bar').style.width = (progress * 100) + '%';
+  const earned = (elapsedSec / 3600) * rate;
+  document.getElementById('earnings').textContent = earned.toFixed(2);
+}
+
+function updateLoop() {
+  update();
+  animFrame = requestAnimationFrame(updateLoop);
+}
+
+document.getElementById('startBtn').addEventListener('click', () => {
+  const startInput = document.getElementById('startTime').value;
+  startTime = startInput ? new Date(startInput) : new Date();
+  document.getElementById('startTime').value = startTime.toISOString().slice(0,16);
+  const expectedInput = document.getElementById('expectedEndTime').value;
+  if (!expectedInput) {
+    alert('Bitte voraussichtliche Endzeit angeben.');
+    return;
+  }
+  expectedEnd = new Date(expectedInput);
+  rate = parseFloat(document.getElementById('hourlyRate').value) || 0;
+  document.getElementById('startBtn').disabled = true;
+  document.getElementById('stopBtn').disabled = false;
+  document.getElementById('bar').style.width = '0%';
+  document.getElementById('elapsed').textContent = '0:00:00';
+  document.getElementById('remaining').textContent = formatTime((expectedEnd - startTime) / 1000);
+  document.getElementById('progress').textContent = '0%';
+  document.getElementById('earnings').textContent = '0.00';
+  update();
+  updateLoop();
+});
+
+document.getElementById('stopBtn').addEventListener('click', () => {
+  if (animFrame) {
+    cancelAnimationFrame(animFrame);
+    animFrame = null;
+    update();
+  }
+  document.getElementById('stopBtn').disabled = true;
+  document.getElementById('startBtn').disabled = false;
+});
+</script>
+</body>
+</html>

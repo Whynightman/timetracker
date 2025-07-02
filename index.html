@@ -23,6 +23,7 @@
 <div id="barContainer"><div id="bar"></div></div>
 <div id="info">
 <p>Verstrichene Zeit: <span id="elapsed">0:00:00</span></p>
+<p>Verbleibende Zeit: <span id="remaining">0:00:00</span></p>
 <p>Fortschritt: <span id="progress">0%</span></p>
 <p>Verdienst: &euro;<span id="earnings">0.00</span></p>
 </div>
@@ -45,8 +46,10 @@ function update() {
   const elapsedSec = (now - startTime) / 1000;
   const totalSec = (expectedEnd - startTime) / 1000;
   const progress = Math.min(elapsedSec / totalSec, 1);
+  const remainingSec = Math.max(totalSec - elapsedSec, 0);
 
   document.getElementById('elapsed').textContent = formatTime(elapsedSec);
+  document.getElementById('remaining').textContent = formatTime(remainingSec);
   document.getElementById('progress').textContent = Math.round(progress * 100) + '%';
   document.getElementById('bar').style.width = (progress * 100) + '%';
   const earned = (elapsedSec / 3600) * rate;
@@ -66,6 +69,11 @@ document.getElementById('startBtn').addEventListener('click', () => {
   rate = parseFloat(document.getElementById('hourlyRate').value) || 0;
   document.getElementById('startBtn').disabled = true;
   document.getElementById('stopBtn').disabled = false;
+  document.getElementById('bar').style.width = '0%';
+  document.getElementById('elapsed').textContent = '0:00:00';
+  document.getElementById('remaining').textContent = formatTime((expectedEnd - startTime) / 1000);
+  document.getElementById('progress').textContent = '0%';
+  document.getElementById('earnings').textContent = '0.00';
   update();
   timer = setInterval(update, 1000);
 });
@@ -76,6 +84,7 @@ document.getElementById('stopBtn').addEventListener('click', () => {
     update();
   }
   document.getElementById('stopBtn').disabled = true;
+  document.getElementById('startBtn').disabled = false;
 });
 </script>
 </body>
